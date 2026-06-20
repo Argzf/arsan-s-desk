@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 export default function DashboardPage() {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
