@@ -35,8 +35,7 @@ export default function Home() {
         body: JSON.stringify({ phone }),
       });
     } catch (err) {
-      // Silent fail for webhook
-      console.error('Webhook logging failed:', err);
+      // Silent fail
     }
   };
 
@@ -52,7 +51,6 @@ export default function Home() {
         body: JSON.stringify({ phone: formData.phone }),
       });
 
-      // Try to parse JSON, fallback to text if not JSON
       let verifyData;
       const contentType = verifyRes.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
@@ -150,7 +148,6 @@ export default function Home() {
 
   const displayTheme = getDisplayTheme?.() || 'light';
 
-  // --- RENDER: Verified state ---
   if (step === 'verified') {
     return (
       <main className="min-h-screen flex items-center justify-center p-6 bg-white dark:bg-gray-900">
@@ -169,10 +166,9 @@ export default function Home() {
     );
   }
 
-  // --- MAIN LANDING PAGE ---
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100">
-      {/* Theme toggle - fixed top right */}
+      {/* Theme toggle */}
       <button
         onClick={toggleTheme}
         className="fixed top-4 right-4 z-50 rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors shadow-lg"
@@ -200,26 +196,24 @@ export default function Home() {
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-white dark:bg-gray-900 rounded-t-3xl"></div>
       </section>
 
-      {/* Features Section */}
+      {/* What This Is Section */}
       <section className="py-16 px-6 bg-white dark:bg-gray-900">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Why Arsan's Desk?</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="p-6 rounded-xl bg-gray-50 dark:bg-gray-800 shadow hover:shadow-lg transition-shadow">
-              <div className="text-4xl mb-4">🔒</div>
-              <h3 className="text-xl font-semibold mb-2">Secure & Private</h3>
-              <p className="text-gray-600 dark:text-gray-300">Your phone number is verified via Telegram – we never store sensitive data without your consent.</p>
-            </div>
-            <div className="p-6 rounded-xl bg-gray-50 dark:bg-gray-800 shadow hover:shadow-lg transition-shadow">
-              <div className="text-4xl mb-4">💡</div>
-              <h3 className="text-xl font-semibold mb-2">Share Freely</h3>
-              <p className="text-gray-600 dark:text-gray-300">Whether it's a great idea, a complaint, or a suggestion – your voice matters.</p>
-            </div>
-            <div className="p-6 rounded-xl bg-gray-50 dark:bg-gray-800 shadow hover:shadow-lg transition-shadow">
-              <div className="text-4xl mb-4">⚡</div>
-              <h3 className="text-xl font-semibold mb-2">Fast & Simple</h3>
-              <p className="text-gray-600 dark:text-gray-300">Fill the form, verify with a code, and submit – all in under a minute.</p>
-            </div>
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-8">What This Is</h2>
+          <div className="prose prose-lg dark:prose-invert mx-auto text-gray-700 dark:text-gray-300 space-y-4">
+            <p>
+              <strong>Arsan's Desk</strong> is a direct line to the team. Use this space to:
+            </p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li><strong>Share creative ideas</strong> – propose features, projects, or improvements.</li>
+              <li><strong>Report issues or complaints</strong> – let us know about problems you’ve encountered.</li>
+              <li><strong>Give constructive feedback</strong> – help us grow and serve you better.</li>
+              <li><strong>Ask questions</strong> – if you’re unsure about something, we’re here to clarify.</li>
+            </ul>
+            <p>
+              Your submissions are taken seriously and will be reviewed personally. 
+              We value your voice – every message helps shape what we do.
+            </p>
           </div>
         </div>
       </section>
@@ -369,10 +363,19 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-6 text-center text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
-        &copy; {new Date().getFullYear()} Arsan's Desk. All rights reserved.
-      </footer>
+     {/* Footer */}
+<footer className="py-6 text-center text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
+  &copy; {new Date().getFullYear()}{' '}
+  <a 
+    href="https://arcanum-arsan.vercel.app/links/portfolio" 
+    target="_blank" 
+    rel="noopener noreferrer"
+    className="text-blue-600 dark:text-blue-400 hover:underline"
+  >
+    Arsan Gzf
+  </a>
+  . All rights reserved.
+</footer>
     </main>
   );
 }
