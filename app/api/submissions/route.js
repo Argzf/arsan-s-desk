@@ -1,19 +1,18 @@
 import { getSubmissions } from '@/lib/db';
 import { cookies } from 'next/headers';
 
-// GET: Fetch all submissions (admin only)
 export async function GET() {
-  const cookieStore = await cookies();
-  const authToken = cookieStore.get('admin_auth')?.value;
-
-  if (authToken !== 'authenticated') {
-    return Response.json(
-      { error: 'Unauthorized.' },
-      { status: 401 }
-    );
-  }
-
   try {
+    const cookieStore = await cookies();
+    const authToken = cookieStore.get('admin_auth')?.value;
+
+    if (authToken !== 'authenticated') {
+      return Response.json(
+        { error: 'Unauthorized.' },
+        { status: 401 }
+      );
+    }
+
     const submissions = await getSubmissions();
     return Response.json({ submissions });
   } catch (error) {
@@ -25,7 +24,6 @@ export async function GET() {
   }
 }
 
-// POST: Login (set auth cookie)
 export async function POST(request) {
   try {
     const { password } = await request.json();
@@ -38,9 +36,8 @@ export async function POST(request) {
     }
 
     const adminPassword = process.env.ADMIN_PASSWORD;
-
     if (!adminPassword) {
-      console.error('ADMIN_PASSWORD not set in environment variables.');
+      console.error('ADMIN_PASSWORD not set.');
       return Response.json(
         { error: 'Server configuration error.' },
         { status: 500 }
@@ -55,13 +52,12 @@ export async function POST(request) {
     }
 
     const response = Response.json({ success: true });
-
     response.cookies.set('admin_auth', 'authenticated', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
     });
 
     return response;
@@ -74,17 +70,22 @@ export async function POST(request) {
   }
 }
 
-// DELETE: Logout (clear auth cookie)
 export async function DELETE() {
-  const response = Response.json({ success: true });
-
-  response.cookies.set('admin_auth', '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 0,
-  });
-
-  return response;
+  try {
+    const response = Response.json({ success: true });
+    response.cookies.set('admin_auth', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0,
+    });
+    return response;
+  } catch (error) {
+    console.error('Logout error:', error);
+    return Response.json(
+      { error: 'Failed to logout.' },
+      { status: 500 }
+    );
+  }
 }
