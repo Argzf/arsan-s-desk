@@ -18,7 +18,7 @@ export async function GET() {
   } catch (error) {
     console.error('Fetch error:', error);
     return Response.json(
-      { error: 'Failed to fetch submissions.' },
+      { error: error.message || 'Failed to fetch submissions.' },
       { status: 500 }
     );
   }
@@ -64,7 +64,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Login error:', error);
     return Response.json(
-      { error: 'Failed to login.' },
+      { error: error.message || 'Failed to login.' },
       { status: 500 }
     );
   }
@@ -84,7 +84,7 @@ export async function DELETE() {
   } catch (error) {
     console.error('Logout error:', error);
     return Response.json(
-      { error: 'Failed to logout.' },
+      { error: error.message || 'Failed to logout.' },
       { status: 500 }
     );
   }
