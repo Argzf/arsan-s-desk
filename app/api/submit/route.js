@@ -34,7 +34,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Submission error:', error);
     return Response.json(
-      { error: 'Failed to create submission.' },
+      { error: error.message || 'Failed to create submission.' },
       { status: 500 }
     );
   }
