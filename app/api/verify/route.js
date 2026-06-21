@@ -11,7 +11,6 @@ export async function POST(request) {
       );
     }
 
-    // Basic E.164 format validation
     if (!phone.match(/^\+[1-9]\d{1,14}$/)) {
       return Response.json(
         { error: 'Phone number must be in E.164 format (e.g., +1234567890).' },
