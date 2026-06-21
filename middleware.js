@@ -3,15 +3,22 @@ import { NextResponse } from 'next/server';
 export function middleware(request) {
   const path = request.nextUrl.pathname;
 
-  // Allow access to login page and API routes
-  if (path === '/login' || path.startsWith('/api/')) {
-    return NextResponse.next();
+  // Check if site is closed
+  const siteStatus = process.env.SITE_STATUS || 'open';
+
+  // Allow admin routes and API routes even when closed
+  const isAdminRoute = path === '/login' || path.startsWith('/dashboard');
+  const isApiRoute = path.startsWith('/api');
+
+  if (siteStatus === 'closed' && !isAdminRoute && !isApiRoute) {
+    // Redirect to the closed page
+    const closedUrl = new URL('/closed', request.url);
+    return NextResponse.redirect(closedUrl);
   }
 
-  // Protect dashboard route
+  // Protect dashboard (existing middleware logic)
   if (path.startsWith('/dashboard')) {
     const authToken = request.cookies.get('admin_auth')?.value;
-
     if (!authToken || authToken !== 'authenticated') {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('from', path);
@@ -23,5 +30,5 @@ export function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
