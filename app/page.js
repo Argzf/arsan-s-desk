@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useTheme } from '@/lib/ThemeContext';
 
-// ✅ Prevents static generation
 export const dynamic = 'force-dynamic';
 
 export default function Home() {
   const { theme, toggleTheme, getDisplayTheme } = useTheme();
+  const formRef = useRef(null);
+
   const [formData, setFormData] = useState({
     title: '',
     message: '',
@@ -34,6 +35,7 @@ export default function Home() {
         body: JSON.stringify({ phone }),
       });
     } catch (err) {
+      // Silent fail for webhook
       console.error('Webhook logging failed:', err);
     }
   };
@@ -50,7 +52,15 @@ export default function Home() {
         body: JSON.stringify({ phone: formData.phone }),
       });
 
-      const verifyData = await verifyRes.json();
+      // Try to parse JSON, fallback to text if not JSON
+      let verifyData;
+      const contentType = verifyRes.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        verifyData = await verifyRes.json();
+      } else {
+        const text = await verifyRes.text();
+        throw new Error(`Server returned non-JSON: ${text.substring(0, 100)}`);
+      }
 
       if (!verifyRes.ok) {
         setStatus({ type: 'error', message: verifyData.error || 'Failed to send verification code.' });
@@ -62,7 +72,7 @@ export default function Home() {
       setStep('verifying');
       setStatus({ type: 'success', message: 'Verification code sent to your phone via Telegram!' });
     } catch (err) {
-      setStatus({ type: 'error', message: 'Something went wrong. Please try again.' });
+      setStatus({ type: 'error', message: err.message || 'Something went wrong. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +94,14 @@ export default function Home() {
         }),
       });
 
-      const checkData = await checkRes.json();
+      let checkData;
+      const contentType = checkRes.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        checkData = await checkRes.json();
+      } else {
+        const text = await checkRes.text();
+        throw new Error(`Server returned non-JSON: ${text.substring(0, 100)}`);
+      }
 
       if (!checkRes.ok) {
         setStatus({ type: 'error', message: checkData.error || 'Invalid verification code.' });
@@ -101,7 +118,14 @@ export default function Home() {
         }),
       });
 
-      const submitData = await submitRes.json();
+      let submitData;
+      const subContentType = submitRes.headers.get('content-type');
+      if (subContentType && subContentType.includes('application/json')) {
+        submitData = await submitRes.json();
+      } else {
+        const text = await submitRes.text();
+        throw new Error(`Server returned non-JSON: ${text.substring(0, 100)}`);
+      }
 
       if (!submitRes.ok) {
         setStatus({ type: 'error', message: submitData.error || 'Failed to submit.' });
@@ -114,17 +138,22 @@ export default function Home() {
       setFormData({ title: '', message: '', phone: '', instagram: '' });
       setVerificationCode('');
     } catch (err) {
-      setStatus({ type: 'error', message: 'Something went wrong. Please try again.' });
+      setStatus({ type: 'error', message: err.message || 'Something went wrong. Please try again.' });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const scrollToForm = () => {
+    formRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   const displayTheme = getDisplayTheme?.() || 'light';
 
+  // --- RENDER: Verified state ---
   if (step === 'verified') {
     return (
-      <main className="flex min-h-screen items-center justify-center p-6 bg-white dark:bg-gray-900">
+      <main className="min-h-screen flex items-center justify-center p-6 bg-white dark:bg-gray-900">
         <div className="w-full max-w-md rounded-lg bg-white dark:bg-gray-800 p-8 shadow-lg text-center">
           <div className="mb-4 text-5xl">✅</div>
           <h2 className="text-2xl font-bold text-green-600 dark:text-green-400">Submission Received!</h2>
@@ -140,131 +169,210 @@ export default function Home() {
     );
   }
 
+  // --- MAIN LANDING PAGE ---
   return (
-    <main className="flex min-h-screen items-center justify-center p-6 bg-white dark:bg-gray-900 relative">
+    <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+      {/* Theme toggle - fixed top right */}
       <button
         onClick={toggleTheme}
-        className="absolute top-4 right-4 rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+        className="fixed top-4 right-4 z-50 rounded-full p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors shadow-lg"
         aria-label="Toggle theme"
       >
         {displayTheme === 'dark' ? '☀️' : '🌙'}
       </button>
 
-      <div className="w-full max-w-lg rounded-lg bg-white dark:bg-gray-800 p-8 shadow-lg">
-        <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Arsan's Desk</h1>
-          <p className="text-gray-500 dark:text-gray-400">Submit your ideas, complaints, or suggestions.</p>
+      {/* Hero Section */}
+      <section className="relative pt-20 pb-16 px-6 text-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-800 dark:to-gray-900">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-4">
+            Welcome to <span className="text-blue-600 dark:text-blue-400">Arsan's Desk</span>
+          </h1>
+          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8">
+            Share your ideas, complaints, or suggestions — securely and anonymously.
+          </p>
+          <button
+            onClick={scrollToForm}
+            className="inline-block px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg transition-transform transform hover:scale-105"
+          >
+            Get Started
+          </button>
         </div>
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-white dark:bg-gray-900 rounded-t-3xl"></div>
+      </section>
 
-        {status.message && (
-          <div className={`mb-4 rounded-lg p-3 text-sm ${
-            status.type === 'error'
-              ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200'
-              : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'
-          }`}>
-            {status.message}
+      {/* Features Section */}
+      <section className="py-16 px-6 bg-white dark:bg-gray-900">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-12">Why Arsan's Desk?</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="p-6 rounded-xl bg-gray-50 dark:bg-gray-800 shadow hover:shadow-lg transition-shadow">
+              <div className="text-4xl mb-4">🔒</div>
+              <h3 className="text-xl font-semibold mb-2">Secure & Private</h3>
+              <p className="text-gray-600 dark:text-gray-300">Your phone number is verified via Telegram – we never store sensitive data without your consent.</p>
+            </div>
+            <div className="p-6 rounded-xl bg-gray-50 dark:bg-gray-800 shadow hover:shadow-lg transition-shadow">
+              <div className="text-4xl mb-4">💡</div>
+              <h3 className="text-xl font-semibold mb-2">Share Freely</h3>
+              <p className="text-gray-600 dark:text-gray-300">Whether it's a great idea, a complaint, or a suggestion – your voice matters.</p>
+            </div>
+            <div className="p-6 rounded-xl bg-gray-50 dark:bg-gray-800 shadow hover:shadow-lg transition-shadow">
+              <div className="text-4xl mb-4">⚡</div>
+              <h3 className="text-xl font-semibold mb-2">Fast & Simple</h3>
+              <p className="text-gray-600 dark:text-gray-300">Fill the form, verify with a code, and submit – all in under a minute.</p>
+            </div>
           </div>
-        )}
+        </div>
+      </section>
 
-        {step === 'form' ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title (Optional)</label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none"
-                placeholder="Brief title for your submission"
-              />
+      {/* How It Works */}
+      <section className="py-16 px-6 bg-gray-50 dark:bg-gray-800">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
+          <div className="flex flex-col md:flex-row justify-center items-center gap-8">
+            <div className="text-center">
+              <div className="text-5xl mb-2">📝</div>
+              <p className="font-semibold">1. Fill the form</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Enter your message and contact info.</p>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Message *</label>
-              <textarea
-                name="message"
-                required
-                value={formData.message}
-                onChange={handleChange}
-                rows="4"
-                className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none"
-                placeholder="Describe your idea, complaint, or suggestion..."
-              />
+            <div className="text-4xl text-gray-400 dark:text-gray-500">→</div>
+            <div className="text-center">
+              <div className="text-5xl mb-2">📱</div>
+              <p className="font-semibold">2. Verify via Telegram</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">We send a code to your phone.</p>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number *</label>
-              <input
-                type="tel"
-                name="phone"
-                required
-                value={formData.phone}
-                onChange={handleChange}
-                onBlur={handlePhoneBlur}
-                className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none"
-                placeholder="+1234567890 (E.164 format)"
-              />
-              <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">We'll send a verification code via Telegram.</p>
+            <div className="text-4xl text-gray-400 dark:text-gray-500">→</div>
+            <div className="text-center">
+              <div className="text-5xl mb-2">✅</div>
+              <p className="font-semibold">3. Submit</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Your submission is securely stored.</p>
             </div>
+          </div>
+        </div>
+      </section>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Instagram (Optional)</label>
-              <input
-                type="text"
-                name="instagram"
-                value={formData.instagram}
-                onChange={handleChange}
-                className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none"
-                placeholder="@yourusername"
-              />
+      {/* Contact Form Section */}
+      <section ref={formRef} className="py-16 px-6 bg-white dark:bg-gray-900 scroll-mt-16">
+        <div className="max-w-lg mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-6">Submit Your Request</h2>
+          <p className="text-center text-gray-600 dark:text-gray-400 mb-8">
+            All fields except Title and Instagram are required.
+          </p>
+
+          {status.message && (
+            <div className={`mb-4 rounded-lg p-3 text-sm ${
+              status.type === 'error'
+                ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200'
+                : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'
+            }`}>
+              {status.message}
             </div>
+          )}
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full rounded-lg bg-blue-600 py-3 text-white font-medium hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 disabled:opacity-50"
-            >
-              {isLoading ? 'Sending...' : 'Verify & Submit'}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleVerify} className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              We sent a verification code to <strong>{formData.phone}</strong> via Telegram.
-            </p>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Verification Code *</label>
-              <input
-                type="text"
-                required
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none"
-                placeholder="Enter the code you received"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full rounded-lg bg-green-600 py-3 text-white font-medium hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 disabled:opacity-50"
-            >
-              {isLoading ? 'Verifying...' : 'Verify Code & Submit'}
-            </button>
-            <button
-              type="button"
-              onClick={() => { setStep('form'); setStatus({ type: '', message: '' }); }}
-              className="w-full text-sm text-gray-500 dark:text-gray-400 hover:underline"
-            >
-              ← Go back
-            </button>
-          </form>
-        )}
+          {step === 'form' ? (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title (Optional)</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none"
+                  placeholder="Brief title for your submission"
+                />
+              </div>
 
-        <p className="mt-4 text-center text-xs text-gray-400 dark:text-gray-500">
-          Your phone number is used only for verification.
-        </p>
-      </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Message *</label>
+                <textarea
+                  name="message"
+                  required
+                  value={formData.message}
+                  onChange={handleChange}
+                  rows="4"
+                  className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none"
+                  placeholder="Describe your idea, complaint, or suggestion..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number *</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  required
+                  value={formData.phone}
+                  onChange={handleChange}
+                  onBlur={handlePhoneBlur}
+                  className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none"
+                  placeholder="+1234567890 (E.164 format)"
+                />
+                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">We'll send a verification code via Telegram.</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Instagram (Optional)</label>
+                <input
+                  type="text"
+                  name="instagram"
+                  value={formData.instagram}
+                  onChange={handleChange}
+                  className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none"
+                  placeholder="@yourusername"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full rounded-lg bg-blue-600 py-3 text-white font-medium hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 disabled:opacity-50"
+              >
+                {isLoading ? 'Sending...' : 'Verify & Submit'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerify} className="space-y-4">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                We sent a verification code to <strong>{formData.phone}</strong> via Telegram.
+              </p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Verification Code *</label>
+                <input
+                  type="text"
+                  required
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none"
+                  placeholder="Enter the code you received"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full rounded-lg bg-green-600 py-3 text-white font-medium hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 disabled:opacity-50"
+              >
+                {isLoading ? 'Verifying...' : 'Verify Code & Submit'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setStep('form'); setStatus({ type: '', message: '' }); }}
+                className="w-full text-sm text-gray-500 dark:text-gray-400 hover:underline"
+              >
+                ← Go back
+              </button>
+            </form>
+          )}
+
+          <p className="mt-4 text-center text-xs text-gray-400 dark:text-gray-500">
+            Your phone number is used only for verification.
+          </p>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-6 text-center text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
+        &copy; {new Date().getFullYear()} Arsan's Desk. All rights reserved.
+      </footer>
     </main>
   );
 }
